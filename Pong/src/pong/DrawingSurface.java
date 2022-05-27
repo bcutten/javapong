@@ -14,14 +14,18 @@ import java.awt.Font;
 import java.awt.FontFormatException;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
+import java.awt.Image;
 import java.awt.RenderingHints;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URL;
 import java.util.ArrayList;
+import javax.imageio.ImageIO;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 
@@ -32,6 +36,8 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable {
     private States gameState;
     private Font titleFont;
     private Font menuFont;
+    private Animation menuCursor;
+    private int ticks = 0;
 
     //these are the different phases the game can be on
     enum States {
@@ -50,6 +56,31 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable {
         this.setFocusable(true);
         this.requestFocus();
         loadFont();
+        loadImages();
+    }
+
+    /**
+     * Get the images from the spritesheet and load em up
+     */
+    private void loadImages() {
+        try {
+            URL url;
+            BufferedImage img;
+            int w = getSize().width;
+            int h = getSize().height;
+            menuCursor = new Animation();
+
+            for (int i = 1; i <= 7; i++) {
+                url = DrawingSurface.class.getResource("star_0" + i + ".png");
+                System.out.println(url);
+                img = ImageIO.read(url);
+                menuCursor.addImage(img.getScaledInstance(75, 75, Image.SCALE_DEFAULT));
+            }
+            System.out.println(menuCursor);
+        } catch (IOException e) {
+            System.out.println("Unable to load images");
+        }
+
     }
 
     /**
@@ -97,8 +128,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable {
         g2d.setColor(Color.BLACK);
         g2d.fillRect(0, 0, w, h);
 
-        drawGrid(g2d, w, h); //to help with placement
-
+        //drawGrid(g2d, w, h); //to help with placement
         //draw menu text (https://zetcode.com/gfx/java2d/textfonts/)
         g2d.setColor(Color.WHITE);
         RenderingHints rh = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -107,8 +137,14 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable {
 
         g2d.setFont(titleFont);
         //using some magic numbers to centre on the screen
-        g2d.drawString("PONG", w / 2 - 130, h / 2 - 200);
+        g2d.drawString("PONG", w / 2 - 135, h / 2 - 150);
+        g2d.setFont(menuFont);
+        g2d.drawString("PLAY", w / 2 - 40, h / 2 - 50);
+        g2d.drawString("HIGH SCORES", w / 2 - 105, h / 2);
+        g2d.drawString("QUIT", w / 2 - 40, h / 2 + 50);
 
+        //draw the menu cursors
+        g2d.drawImage(menuCursor.getImage(), w / 2 - 160, h / 2 - 50, null);
     }
 
     /**
@@ -156,9 +192,26 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable {
         doDrawing(g);
     }
 
+    private void updateGamePlay() {
+
+    }
+
+    private void updateMenu() {
+        menuCursor.cycle(ticks);
+    }
+
     //update the game depending on which state it's in
     public void updateGame() {
-
+        ticks++;
+        if (ticks > 60) {
+            ticks = ticks % 60;
+        }
+        System.out.println(ticks);
+        if (gameState == States.MAIN_MENU) {
+            updateMenu();
+        } else if (gameState == States.PLAY) {
+            updateGamePlay();
+        }
     }
 
     //this method is called after the JPanel is added to the JFrame
