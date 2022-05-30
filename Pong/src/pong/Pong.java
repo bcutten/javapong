@@ -15,6 +15,8 @@ import javax.swing.JFrame;
  */
 public class Pong extends JFrame{
 
+    private DrawingSurface thePanel;
+    
     //constructor
     public Pong() {
         //create the User interface
@@ -27,11 +29,15 @@ public class Pong extends JFrame{
         setTitle("Pong");
         int height = (int)Toolkit.getDefaultToolkit().getScreenSize().getHeight();
         int width = (int)Toolkit.getDefaultToolkit().getScreenSize().getWidth();
-        
-        //add a custom JPanel to draw on
-        add(new DrawingSurface());
         //set the size of the window to full screen
         setSize(width, height);
+       
+        //add a custom JPanel to draw on
+        thePanel = new DrawingSurface();
+        add(thePanel);
+        thePanel.setPreferredSize(getSize());
+        pack();
+        thePanel.loadResources();
         //tell the JFrame what to do when closed
         //this is important if our application has multiple windows
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
