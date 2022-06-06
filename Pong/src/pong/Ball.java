@@ -1,19 +1,15 @@
 /*
  * B Cutten
-    April 2016
-    Represents a ball
+ * May 31, 2022
+ * Represents a ball, which is one of the game objects
  */
 package pong;
 
 import java.awt.Color;
 import java.awt.Graphics2D;
 
-public class Ball {
+public class Ball extends GameObject{
     //attributes of a Ball
-    private int x;
-    private int y;
-    private int xSpeed;
-    private int ySpeed;
     private int radius;
     private Color c;
 
@@ -24,23 +20,26 @@ public class Ball {
      * @param radius - the size of the ball
      */
     public Ball(int x, int y, int radius) {
-        this.x = x;
-        this.y = y;
+        super(x, y);
         this.radius = radius;
         //set defaults
-        c = Color.BLUE;
-        xSpeed = 5;
-        ySpeed = 2;
+        c = Color.WHITE;
     }
-
     
     /**
-     * updates the location of the ball based on the speed
+     * Flips the x speed and adds some acceleration
      */
-    public void update(){
-        
-        x+=xSpeed;
-        y+=ySpeed;
+    public void bounceX(){
+        speedX = -speedX;
+        //accX += 0.1;
+    }
+    
+    /**
+     * Flips the y speed and adds some acceleration
+     */
+    public void bounceY(){
+        speedY = -speedY;
+        //accY += 0.1;
     }
     
     /**
@@ -52,70 +51,7 @@ public class Ball {
         g2d.fillOval(x,y,radius,radius);
     }
     
-    /**
-     * Getter for the x attribute
-     * @return the x position of the ball
-     */
-    public int getX() {
-        return x;
-    }
-
-    /**
-     * Setter for the x attribute
-     * @param x the new x position
-     */
-    public void setX(int x) {
-        this.x = x;
-    }
-
-    /**
-     * Getter for the y attribute
-     * @return the y position of the ball
-     */
-    public int getY() {
-        return y;
-    }
-
-    /**
-     * Setter for the y attribute
-     * @param y the new y position
-     */
-    public void setY(int y) {
-        this.y = y;
-    }
-
-    /**
-     * Getter for the x speed attribute
-     * @return the x speed of the ball
-     */
-    public int getxSpeed() {
-        return xSpeed;
-    }
- 
-    /**
-     * Setter for the x speed
-     * @param xSpeed the new speed
-     */
-    public void setxSpeed(int xSpeed) {
-        this.xSpeed = xSpeed;
-    }
-
-    /**
-     * Getter for the y speed attribute
-     * @return the y speed of the ball
-     */
-    public int getySpeed() {
-        return ySpeed;
-    }
-
-    /**
-     * Setter for the y speed
-     * @param ySpeed the new speed
-     */
-    public void setySpeed(int ySpeed) {
-        this.ySpeed = ySpeed;
-    }
-
+    
     /**
      * Getter for the radius
      * @return the radius of the ball
@@ -153,7 +89,7 @@ public class Ball {
      * @return All of the attributes of the Ball in a String
      */
     public String toString() {
-        return "Ball{" + "x=" + x + ", y=" + y + ", xSpeed=" + xSpeed + ", ySpeed=" + ySpeed + ", radius=" + radius + ", c=" + c + '}';
+        return super.toString() + "Ball {radius=" + radius + ", c=" + c + '}';
     }
 
     /**
@@ -182,20 +118,6 @@ public class Ball {
         return true;
     }
     
-    /**
-     * Make an exact copy of this Ball and return it
-     * @return the new Ball
-     */
-    public Ball clone(){
-        //instantiate new Ball
-        Ball dolly = new Ball(x,y,radius);
-        //set remaining attributes
-        dolly.setColor(c);
-        dolly.setxSpeed(xSpeed);
-        dolly.setySpeed(ySpeed);
-        //return the clone!
-        return dolly;
-    }
     
     
     

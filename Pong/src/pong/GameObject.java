@@ -31,6 +31,15 @@ public class GameObject {
         this(0,0);
     }
 
+    /**
+     * Updates the speed based on the acceleration and the location of the object based on the speed
+     */
+    public void update(){
+        speedX += accX;
+        speedY += accY;
+        x+=speedX;
+        y+=speedY;
+    }
    
     /**
      * Getter for the x coordinate

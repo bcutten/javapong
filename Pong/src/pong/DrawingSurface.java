@@ -48,7 +48,11 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
     private int loadTimer = 0;
     private int player1Score = 0;
     private int player2Score = 0;
-    int w, h;
+    private int w, h;
+    private Ball b;
+    private Paddle player1, player2;
+
+    
 
     //these are the different phases the game can be on
     enum States {
@@ -56,6 +60,8 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         MAIN_MENU,
         PLAY,
         PAUSE,
+        P1_SCORED,
+        P2_SCORED,
         GAME_OVER
     }
 
@@ -109,6 +115,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
                 menuLeftCursor.addImage(img.getScaledInstance(75, 75, Image.SCALE_DEFAULT));
                 menuRightCursor.addImage(img.getScaledInstance(75, 75, Image.SCALE_DEFAULT));
             }
+
             System.out.println("Images loaded");
         } catch (IOException e) {
             System.out.println("Unable to load images");
@@ -144,8 +151,72 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
             drawMainMenu(g2d);
         } else if (gameState == States.PLAY) {
             drawGame(g2d);
-        }
+        } else if (gameState == States.LOADING) {
+            drawLoadScreen(g2d);
+        } else if (gameState == States.P1_SCORED) {
+            drawScoreScreen(g2d, "P1");
+        } else if (gameState == States.P2_SCORED) {
+            drawScoreScreen(g2d, "P2");
+        } else if (gameState == States.PAUSE) {
+            drawPauseScreen(g2d);
+        } 
 
+    }
+
+    /**
+     * This will do all of the drawing needed for the "scored" screen
+     *
+     * @param g2d - the graphics object to draw with
+     * @param winner - the player who just scored
+     */
+    private void drawScoreScreen(Graphics2D g2d, String winner) {
+        //fill black
+        g2d.setColor(Color.BLACK);
+        g2d.fillRect(0, 0, w, h);
+        //white text
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(titleFont);
+        g2d.drawString(winner + " SCORES!", w / 2 - 100, h / 2);
+        //also show score
+        drawScore(g2d);
+    }
+
+    /**
+     * This will do all of the drawing needed for the "paused" screen
+     *
+     * @param g2d - the graphics object to draw with
+     */
+    private void drawPauseScreen(Graphics2D g2d) {
+        //fill black
+        g2d.setColor(Color.BLACK);
+        g2d.fillRect(0, 0, w, h);
+        //also show score
+        drawScore(g2d);
+        //white text
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(titleFont);
+        g2d.drawString("GAME PAUSED", w / 2 - 100, h / 2);
+    }
+    
+    /**
+     * This will do all of the drawing needed for the loading scene
+     *
+     * @param - the graphics object to draw with
+     */
+    private void drawLoadScreen(Graphics2D g2d) {
+        //fill black
+        g2d.setColor(Color.BLACK);
+        g2d.fillRect(0, 0, w, h);
+        g2d.setColor(Color.WHITE);
+        g2d.setFont(new Font("Arial", Font.ITALIC, 48));
+        //using some magic numbers to centre on the screen
+        if (loadTimer % 20 <= 7) {
+            g2d.drawString("Loading.", w / 2 - 100, h / 2);
+        } else if (loadTimer % 20 <= 14) {
+            g2d.drawString("Loading..", w / 2 - 100, h / 2);
+        } else {
+            g2d.drawString("Loading...", w / 2 - 100, h / 2);
+        }
     }
 
     /**
@@ -189,21 +260,20 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         //fill black
         g2d.setColor(Color.BLACK);
         g2d.fillRect(0, 0, w, h);
-        
-        drawGrid(g2d);
+
+        //drawGrid(g2d);
         //draw score
         drawScore(g2d);
         //draw paddles
+        player1.draw(g2d);
+        player2.draw(g2d);
         //draw ball
+        b.draw(g2d);
     }
 
     private void drawScore(Graphics2D g2d) {
-
+        //white text
         g2d.setColor(Color.WHITE);
-        RenderingHints rh = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-        rh.put(RenderingHints.KEY_RENDERING, RenderingHints.VALUE_RENDER_QUALITY);
-        g2d.setRenderingHints(rh);
-
         g2d.setFont(titleFont);
         //using some magic numbers to centre on the screen
         g2d.drawString(player1Score + ":" + player2Score, w / 2 - 55, 70);
@@ -238,9 +308,77 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
     }
 
     private void updateGamePlay() {
+        //update the ball
+        b.update();
+        //update the paddles
+        player1.update();
+        player2.update();
+        //check if the ball should bounce off the top or bottom        
+        if (b.getY() + b.getRadius() >= h || b.getY() <= 0) {
+            b.bounceY();
+        }
+        
+        //check if the ball should bounce off of either paddle
+        if(player1.isHitting(b) || player2.isHitting(b)){            
+            b.bounceX();
+        }
+
+        //check if the ball has hit the left or right (scores!)
+        if (b.getX() + b.getRadius() >= w) {
+            //player 1 scores
+            player1Score++;
+            gameState = States.P1_SCORED;
+        } else if (b.getX() <= 0) {
+            //player 2 scores
+            player2Score++;
+            gameState = States.P2_SCORED;
+        }
 
     }
 
+    /**
+     * This method instantiates the game objects
+     */
+    private void setupGame() {
+        //create the ball and start it moving
+        b = new Ball(w / 2 - 10, h / 2 - 10, 20);
+        b.setSpeedX(5);
+        b.setSpeedY(5);
+        //create the left player paddle
+        player1 = new Paddle(20, h / 2 - 50, 20, 100);
+        //create the right player paddle
+        player2 = new Paddle(w - 40, h / 2 - 50, 20, 100);
+
+    }
+    
+    /**
+     * This method resets the game objects after someone has scored
+     * @param winner - the player who just scored
+     */
+    private void resetGameAfterScore(String winner){
+        //reset each player
+        player1.setX(20);
+        player1.setY(h / 2 - 50);        
+        player2.setX(w - 40);
+        player2.setY(h / 2 - 50);
+        //ball to center
+        b.setX(w / 2 -10);
+        b.setY(h / 2 -10);
+        
+        //start the ball towards the person who just scored
+        if(winner.equals("P1")){
+           b.setSpeedX(-5);
+           b.setSpeedY(-5); 
+        }else{
+           b.setSpeedX(5);
+           b.setSpeedY(5);
+        }
+        
+    }
+
+    /**
+     * This method updates the menu animations
+     */
     private void updateMenu() {
 
         menuLeftCursor.cycle(ticks);
@@ -262,7 +400,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         } else if (gameState == States.LOADING) {
             //this game state waits for the rest of the resources to load before drawing the menu
             loadTimer++;
-            if (loadTimer > 10) {
+            if (loadTimer > 100) {
                 gameState = States.MAIN_MENU;
             }
         }
@@ -290,7 +428,10 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
             updateGame();
             //redraws the screen (calling the paint component method)
             repaint();
-
+            //this fixes the issue with lag caused Linux graphics scheduling
+            if (System.getProperty("os.name").equals("Linux")) {
+                Toolkit.getDefaultToolkit().sync();
+            }
             //calculate how much time has passed since the last call
             //this allows smooth updates and our ball will move at a constant speed (as opposed to being dependent on processor availability)
             timeDiff = System.currentTimeMillis() - beforeTime;
@@ -352,22 +493,25 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         public void keyPressed(KeyEvent e) {
 
             int key = e.getKeyCode();
+            //always quit if escape is pressed
             if (key == KeyEvent.VK_ESCAPE) {
                 System.exit(0);
             }
             if (gameState == States.PLAY) {
-                if (key == KeyEvent.VK_LEFT) {
+                if (key == KeyEvent.VK_W) { //player 1 up
+                    player1.setSpeedY(-5);
+                } else if (key == KeyEvent.VK_S) { //player 1 down
+                    player1.setSpeedY(5);
+                }
 
-                } else if (key == KeyEvent.VK_RIGHT) {
-
-                } else if (key == KeyEvent.VK_UP) {
-
-                } else if (key == KeyEvent.VK_DOWN) {
-
-                } else if (key == KeyEvent.VK_ESCAPE) {
-
-                } else if (key == KeyEvent.VK_PAUSE) {
-
+                if (key == KeyEvent.VK_UP) { //player 2 up
+                    player2.setSpeedY(-5);
+                } else if (key == KeyEvent.VK_DOWN) { //player 2 down
+                    player2.setSpeedY(5);
+                }
+                //space to pause at any time
+                if (key == KeyEvent.VK_SPACE) {
+                    gameState = States.PAUSE;
                 }
             } else if (gameState == States.MAIN_MENU) {
                 if (key == KeyEvent.VK_UP) {
@@ -379,6 +523,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
                 } else if (key == KeyEvent.VK_ENTER) {
                     //check which position the cursor is in and update state accordingly
                     if (menuLeftCursor.getPosition() == 0) {
+                        setupGame();
                         gameState = States.PLAY;
                     } else if (menuLeftCursor.getPosition() == 1) {
                         System.out.println("high scores");
@@ -388,6 +533,23 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
                     }
 
                 }
+            }else if (gameState == States.PAUSE) {
+                //space to unpause
+                if (key == KeyEvent.VK_SPACE) {
+                    gameState = States.PLAY;
+                }
+            }else if (gameState == States.P1_SCORED) {
+                //space to unpause
+                if (key == KeyEvent.VK_SPACE) {
+                    resetGameAfterScore("P1");
+                    gameState = States.PLAY;
+                }
+            }else if (gameState == States.P2_SCORED) {
+                //space to unpause
+                if (key == KeyEvent.VK_SPACE) {
+                    resetGameAfterScore("P2");
+                    gameState = States.PLAY;
+                }
             }
         }
 
@@ -395,10 +557,26 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         public void keyReleased(KeyEvent e) {
 
             int key = e.getKeyCode();
+            //always quit if escape is pressed
+            if (key == KeyEvent.VK_ESCAPE) {
+                System.exit(0);
+            }
+            if (gameState == States.PLAY) {
+                if (key == KeyEvent.VK_W) { //player 1 up
+                    player1.setSpeedY(0);
+                } else if (key == KeyEvent.VK_S) { //player 1 down
+                    player1.setSpeedY(0);
+                }
 
-            if (key == Event.LEFT || key == Event.RIGHT
-                    || key == Event.UP || key == Event.DOWN) {
+                if (key == KeyEvent.VK_UP) { //player 2 up
+                    player2.setSpeedY(0);
+                } else if (key == KeyEvent.VK_DOWN) { //player 2 down
+                    player2.setSpeedY(0);
+                }
 
+                if (key == KeyEvent.VK_PAUSE) {
+
+                }
             }
         }
     }
