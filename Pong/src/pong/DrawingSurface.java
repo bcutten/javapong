@@ -58,7 +58,8 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
     enum States {
         LOADING,
         MAIN_MENU,
-        PLAY,
+        PLAY_2P,
+        PLAY_1P,
         PAUSE,
         P1_SCORED,
         P2_SCORED,
@@ -74,7 +75,6 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         this.setFocusable(true);
         addKeyListener(new TAdapter());
         this.requestFocus();
-        //this.getLayout().preferredLayoutSize(this)
 
     }
 
@@ -90,38 +90,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         loadImages();
     }
 
-    /**
-     * Get the images and load em up
-     */
-    private void loadImages() {
-        try {
-            URL url;
-            BufferedImage img;
-
-            //first position is PLAY
-            menuLeftCursor = new Cursor(w / 2 - 120, h / 2 - 100);
-            menuRightCursor = new Cursor(w / 2 + 50, h / 2 - 100);
-            //second is HIGH SCORE
-            menuLeftCursor.addPosition(w / 2 - 180, h / 2 - 50);
-            menuRightCursor.addPosition(w / 2 + 110, h / 2 - 50);
-            //third is EXIT
-            menuLeftCursor.addPosition(w / 2 - 120, h / 2);
-            menuRightCursor.addPosition(w / 2 + 50, h / 2);
-
-            //load the 7 images into the menu cursor animation
-            for (int i = 1; i <= 7; i++) {
-                url = DrawingSurface.class.getResource("star_0" + i + ".png");
-                img = ImageIO.read(url);
-                menuLeftCursor.addImage(img.getScaledInstance(75, 75, Image.SCALE_DEFAULT));
-                menuRightCursor.addImage(img.getScaledInstance(75, 75, Image.SCALE_DEFAULT));
-            }
-
-            System.out.println("Images loaded");
-        } catch (IOException e) {
-            System.out.println("Unable to load images");
-        }
-
-    }
+    
 
     /**
      * This methods creates a custom font that's included with the game.
@@ -142,14 +111,20 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
 
     }
 
-    //does the actual drawing, depending on which state the game is in
+    
+    /**
+     * Does the actual drawing, depending on which state the game is in
+     * @param g - the graphics object to draw with
+     */
     private void doDrawing(Graphics g) {
         //the Graphics2D class is the class that handles all the drawing
         //must be casted from older Graphics class in order to have access to some newer methods
         Graphics2D g2d = (Graphics2D) g;
+        
+        //check which game state we're in and call the appropriate draw method
         if (gameState == States.MAIN_MENU) {
             drawMainMenu(g2d);
-        } else if (gameState == States.PLAY) {
+        } else if (gameState == States.PLAY_2P) {
             drawGame(g2d);
         } else if (gameState == States.LOADING) {
             drawLoadScreen(g2d);
@@ -176,7 +151,9 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         //white text
         g2d.setColor(Color.WHITE);
         g2d.setFont(titleFont);
-        g2d.drawString(winner + " SCORES!", w / 2 - 100, h / 2);
+        g2d.drawString(winner + " SCORES!", w / 2 - 250, h / 2);
+        g2d.setFont(menuFont);
+        g2d.drawString("Press space to continue", w / 2 - 180, h / 2 + 100);
         //also show score
         drawScore(g2d);
     }
@@ -195,7 +172,10 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         //white text
         g2d.setColor(Color.WHITE);
         g2d.setFont(titleFont);
-        g2d.drawString("GAME PAUSED", w / 2 - 100, h / 2);
+        g2d.drawString("GAME PAUSED", w / 2 - 320, h / 2);
+        g2d.setFont(menuFont);
+        g2d.drawString("Press space to continue", w / 2 - 180, h / 2 + 100);
+        drawGrid(g2d);
     }
     
     /**
@@ -230,7 +210,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         g2d.setColor(Color.BLACK);
         g2d.fillRect(0, 0, w, h);
 
-        //drawGrid(g2d, w, h); //to help with placement
+        //drawGrid(g2d); //to help with placement
         //draw menu text (https://zetcode.com/gfx/java2d/textfonts/)
         g2d.setColor(Color.WHITE);
         RenderingHints rh = new RenderingHints(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
@@ -239,15 +219,48 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
 
         g2d.setFont(titleFont);
         //using some magic numbers to centre on the screen
-        g2d.drawString("PONG", w / 2 - 135, h / 2 - 150);
+        g2d.drawString("PONG", w / 2 - 140, h / 2 - 150);
         g2d.setFont(menuFont);
-        g2d.drawString("PLAY", w / 2 - 40, h / 2 - 50);
-        g2d.drawString("HIGH SCORES", w / 2 - 105, h / 2);
+        g2d.drawString("PLAYER VS PLAYER", w / 2 - 150, h / 2 - 50);
+        g2d.drawString("PLAYER VS CPU", w / 2 - 125, h / 2);
         g2d.drawString("QUIT", w / 2 - 40, h / 2 + 50);
 
         //draw the menu cursors
         g2d.drawImage(menuLeftCursor.getImage(), menuLeftCursor.getCurrentX(), menuLeftCursor.getCurrentY(), null);
         g2d.drawImage(menuRightCursor.getImage(), menuRightCursor.getCurrentX(), menuRightCursor.getCurrentY(), null);
+    }
+    
+    /**
+     * Get the images and load em up
+     */
+    private void loadImages() {
+        try {
+            URL url;
+            BufferedImage img;
+
+            //first position is PLAY
+            menuLeftCursor = new Cursor(w / 2 - 225, h / 2 - 100);
+            menuRightCursor = new Cursor(w / 2 + 155, h / 2 - 100);
+            //second is HIGH SCORE
+            menuLeftCursor.addPosition(w / 2 - 200, h / 2 - 50);
+            menuRightCursor.addPosition(w / 2 + 125, h / 2 - 50);
+            //third is EXIT
+            menuLeftCursor.addPosition(w / 2 - 115, h / 2);
+            menuRightCursor.addPosition(w / 2 + 40, h / 2);
+
+            //load the 7 images into the menu cursor animation
+            for (int i = 1; i <= 7; i++) {
+                url = DrawingSurface.class.getResource("star_0" + i + ".png");
+                img = ImageIO.read(url);
+                menuLeftCursor.addImage(img.getScaledInstance(75, 75, Image.SCALE_DEFAULT));
+                menuRightCursor.addImage(img.getScaledInstance(75, 75, Image.SCALE_DEFAULT));
+            }
+
+            System.out.println("Images loaded");
+        } catch (IOException e) {
+            System.out.println("Unable to load images");
+        }
+
     }
 
     /**
@@ -289,12 +302,12 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
     private void drawGrid(Graphics2D g2d) {
         g2d.setColor(Color.WHITE);
         //draw vertical lines
-        for (int x = 0; x < w; x += 50) {
+        for (int x = 0; x < w; x += 20) {
             g2d.drawLine(x, 0, x, h);
         }
 
         //draw horizontal lines
-        for (int y = 0; y < h; y += 50) {
+        for (int y = 0; y < h; y += 20) {
             g2d.drawLine(0, y, w, y);
         }
     }
@@ -395,7 +408,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
         //System.out.println(ticks);
         if (gameState == States.MAIN_MENU) {
             updateMenu();
-        } else if (gameState == States.PLAY) {
+        } else if (gameState == States.PLAY_2P) {
             updateGamePlay();
         } else if (gameState == States.LOADING) {
             //this game state waits for the rest of the resources to load before drawing the menu
@@ -497,7 +510,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
             if (key == KeyEvent.VK_ESCAPE) {
                 System.exit(0);
             }
-            if (gameState == States.PLAY) {
+            if (gameState == States.PLAY_2P) {
                 if (key == KeyEvent.VK_W) { //player 1 up
                     player1.setSpeedY(-5);
                 } else if (key == KeyEvent.VK_S) { //player 1 down
@@ -524,10 +537,10 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
                     //check which position the cursor is in and update state accordingly
                     if (menuLeftCursor.getPosition() == 0) {
                         setupGame();
-                        gameState = States.PLAY;
+                        gameState = States.PLAY_2P;
                     } else if (menuLeftCursor.getPosition() == 1) {
                         System.out.println("high scores");
-                        gameState = States.PLAY;
+                        gameState = States.PLAY_2P;
                     } else if (menuLeftCursor.getPosition() == 2) {
                         System.exit(0);
                     }
@@ -536,19 +549,19 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
             }else if (gameState == States.PAUSE) {
                 //space to unpause
                 if (key == KeyEvent.VK_SPACE) {
-                    gameState = States.PLAY;
+                    gameState = States.PLAY_2P;
                 }
             }else if (gameState == States.P1_SCORED) {
                 //space to unpause
                 if (key == KeyEvent.VK_SPACE) {
                     resetGameAfterScore("P1");
-                    gameState = States.PLAY;
+                    gameState = States.PLAY_2P;
                 }
             }else if (gameState == States.P2_SCORED) {
                 //space to unpause
                 if (key == KeyEvent.VK_SPACE) {
                     resetGameAfterScore("P2");
-                    gameState = States.PLAY;
+                    gameState = States.PLAY_2P;
                 }
             }
         }
@@ -561,7 +574,7 @@ public class DrawingSurface extends JPanel implements MouseListener, Runnable, A
             if (key == KeyEvent.VK_ESCAPE) {
                 System.exit(0);
             }
-            if (gameState == States.PLAY) {
+            if (gameState == States.PLAY_2P) {
                 if (key == KeyEvent.VK_W) { //player 1 up
                     player1.setSpeedY(0);
                 } else if (key == KeyEvent.VK_S) { //player 1 down
